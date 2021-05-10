@@ -1,3 +1,15 @@
+# Create a simple calculator that given a string of operators (), +, -, *, /
+# and numbers separated by spaces returns the value of that expression
+#
+#Example:
+#
+#Calculator().evaluate("2 / 2 + 3 * 4 - 6") # => 7
+#Remember about the order of operations! Multiplications and divisions have a higher priority and
+# should be performed left-to-right. Additions and subtractions have a lower priority and should also
+# be performed left-to-right.
+
+import codewars_test as test
+
 class Calculator(object):
     def evaluate(self, string):
         tokens = tokenizer(string)
@@ -124,9 +136,7 @@ def tokenizer(string):
         tokens.append(tok)
                           
     return tokens
-                         
-            
-#assert Calculator().evaluate("-1") == -1
+
 assert Calculator().evaluate("2 / 2 + 3 * 4 - 6") == 7
 assert Calculator().evaluate("3 * 4 + 3 * 7 - 6") == 27
 assert Calculator().evaluate("1 + 1") == 2
@@ -135,3 +145,13 @@ assert Calculator().evaluate("(5)") == 5
 assert Calculator().evaluate("( ( ( ( 1 ) * 2 ) ) )") == 2
 assert Calculator().evaluate("6 / (3 + 3) * 4 - 6") == -2
 assert Calculator().evaluate("1.1 * 2.2 * 3.3") - 7.986 < 0.001
+
+@test.describe("Sample tests")
+def sample_tests():
+    test.assert_equals(Calculator().evaluate("2 / 2 + 3 * 4 - 6"), 7)
+    test.assert_equals(Calculator().evaluate("3 * 4 + 3 * 7 - 6"), 27)
+    test.assert_equals(Calculator().evaluate('1 + 1'), 2)
+    test.assert_equals(Calculator().evaluate("( ( ( ( 1 ) * 2 ) ) )"), 2)
+    test.assert_equals(Calculator().evaluate("( ( ( ( ( ( ( 5 ) ) ) ) ) ) )"), 5)
+    test.assert_equals(Calculator().evaluate("2 * ( 2 * ( 2 * ( 2 * 1 ) ) )"), 16)
+    test.assert_equals(Calculator().evaluate("3 * ( 4 + 7 ) - 6"), 27)

@@ -43,6 +43,9 @@
 # NOTE: eval and exec are disallowed in your solution.
 
 import codewars_test as Test
+
+
+
 import enum
 
 class TokenType(enum.Enum):
@@ -66,26 +69,126 @@ class Token(object):
             value=repr(self.value)
         )
 
-    def __repr__(selfs):
+    def __repr__(self):
         return self.__str__()
 
 class Node(object):
-    pass
+    def __init__(self):
+        self.type = None
 
 class NumberNode(Node):
-    def __init__(self, number):
-        self.number = self.number
+    def __init__(self, token):
+        self.type = "Number"
+        self.token = token
+        self.number = token.value
 
-class BinOpNode(Node):
-    def __init__(self, op, lhs, rhs):
+class OpNode(Node):
+    def __init__(self, lhs, op, rhs):
+        self.type = "Op"
         self.op = op
+        self.token = op
         self.lhs = lhs
         self.rhs = rhs
 
 class UnaryOpNode(Node):
     def __init__(self, op, operand):
+        self.type = "Negation"
         self.of = op
         self.operand = operand
+
+class Solver(object):
+    def __init__(self):
+        pass
+
+    def solve(self, ast):
+        if ast.type == "Number":
+            return float(ast.token.value)
+        if ast.type == "Negation":
+            operand = self.solve(ast.operand)
+            return -operand
+        if ast.type == "Op":
+            lhs = self.solve(ast.lhs)
+            rhs = self.solve(ast.rhs)
+            if ast.token.type == TokenType.PLUS:
+                return lhs + rhs
+            if ast.token.type == TokenType.MINUS:
+                return lhs - rhs
+            if ast.token.type == TokenType.MUL:
+                return lhs * rhs
+            if ast.token.type == TokenType.DIV:
+                return lhs / rhs
+
+
+class Parser(object):
+    """Parser accepts a list of tokens and returns an abstract syntax tree"""
+    def __init__(self, tokens):
+        self.tokens = tokens
+        self.token_pos = 0
+        self.current_token = self.tokens[self.token_pos]
+
+    def get_parsed_tree(self):
+        """
+            expr -> term ((PLUS|MINUS) term)*
+            term -> factor ((MUL|DIV) factor)*
+            factor -> NUMBER|-factor|LPAREN expr RPAREN
+        """
+
+        root = self.expr()
+        return root
+
+    def expr(self):
+        root = self.term()
+        while self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
+            lhs = root
+            op = self.current_token
+
+            self.__advance_token()
+
+            rhs = self.term()
+
+            root = OpNode(lhs, op, rhs)
+        return root
+
+    def term(self):
+        root = self.factor()
+
+        while self.current_token.type in (TokenType.MUL, TokenType.DIV):
+            lhs = root
+            op = self.current_token
+            self.__advance_token()
+            rhs = self.factor()
+            root = OpNode(lhs, op, rhs)
+
+        return root
+
+    def factor(self):
+        if self.current_token.type == TokenType.NUMBER:
+            root = NumberNode(self.current_token)
+            self.__advance_token()
+            return root
+
+        if self.current_token.type == TokenType.MINUS:
+            op = self.current_token
+            self.__advance_token()
+            operand = self.factor()
+            return UnaryOpNode(op, operand)
+
+        if self.current_token.type == TokenType.LPAREN:
+            self.__advance_token()
+            root = self.expr()
+            self.__eat_token(TokenType.RPAREN)
+            return root
+
+    def __advance_token(self):
+        if self.current_token.type != TokenType.EOF:
+            self.token_pos = self.token_pos + 1
+            self.current_token = self.tokens[self.token_pos]
+
+    def __eat_token(self, token_type):
+        if self.current_token.type == token_type:
+            self.__advance_token()
+        else:
+            raise Exception("Parse Exception")
 
 class Tokenizer(object):
     """Tokenizer accepts a text expression and returns a list of tokens"""
@@ -109,7 +212,7 @@ class Tokenizer(object):
             self.__skip_whitespace()
 
         if self.current_char in "0123456789.":
-            return Token(TokenType.Number, self.__get_number())
+            return Token(TokenType.NUMBER, self.__get_number())
 
         if self.current_char == '+':
             self.__advance()
@@ -133,13 +236,13 @@ class Tokenizer(object):
 
         if self.current_char == ')':
             self.__advance()
-            return Token(TokenType.PLUS, ')')
+            return Token(TokenType.RPAREN, ')')
 
         raise Exception("Unhandled Character - " + self.current_char)
 
     def __skip_whitespace(self):
         while self.current_char is not None and self.current_char.isspace():
-            self.__advance
+            self.__advance()
 
     def __get_number(self):
         result = ''
@@ -149,7 +252,7 @@ class Tokenizer(object):
         return result
 
     def __advance(self):
-        self.pos =+ 1
+        self.pos += 1
         if self.pos > len(self.text) - 1:
             self.current_char = None
         else:
@@ -157,9 +260,17 @@ class Tokenizer(object):
 
 
 def calc(expression):
-    tokenizer = Tokenizer("1 + 2 / 3")
+    print("expression", expression)
+    tokenizer = Tokenizer(expression)
     tokens = tokenizer.get_tokens()
-    print(tokens)
+    print("tokens")
+    print(*tokens, sep='\n')
+    parser = Parser(tokens)
+    ast = parser.get_parsed_tree()
+    solver = Solver()
+    rtn = solver.solve(ast)
+    return rtn
+
 
 tests = [
     ["1 + 1", 2],

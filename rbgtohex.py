@@ -1,3 +1,6 @@
+import codewars_test as test
+
+
 def rgb(r, g, b):
 
     if r < 0:
